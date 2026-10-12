@@ -18,3 +18,6 @@
 
 ## 女生版风格规矩（用户 2026-10-12 定）
 女生版走**流行路线**：现代流行编曲与唱腔，题材用青春、成长、洒脱、追梦、普通恋爱等流行题材，**不再写老公老婆/夫妻家庭叙事**（那套只留给明确点名的夫妻对歌）。男生版规矩不变。
+
+## 正式写词/审词方法源（2026-10-12 整合）
+本 Agent 的正式写词与审词方法以技能包 `chinese-songwriter-skill`（~/workspace/skills/chinese-songwriter-skill/）为准，按其资源路由读取：写词用 `prompts/lyric_creator.md`，审词与五维打分用 `prompts/lyric_reviewer.md`，对唱设计用 `prompts/duet_designer.md`，押韵/结构/风格查 `knowledge/`。本文件只保留本线自有规矩（钩子打法、生产实证、用户定版的人选与题材口径），与方法源冲突时先问用户，不许自作主张二选一。

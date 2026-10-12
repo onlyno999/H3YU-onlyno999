@@ -15,3 +15,5 @@
 成功案例：《满城妖魔》完整版（190s）、《你的良心不会痛吗》（240s），见 references/cases.md。
 
 本地技能目录：~/workspace/skills/h3yu-onlyno999/（与本仓同步）。
+
+依赖说明：写词与审词方法依赖 `chinese-songwriter-skill` 技能包（本地 ~/workspace/skills/chinese-songwriter-skill/，源 github.com/coinluu/chinese-songwriter-skill）——五分析、副歌先行、五维审词与对唱设计皆走它的方法文件；Caption 依赖官方 `music-caption-rewriter` 技能。两个依赖均按路径引用，内容不在本仓复制。

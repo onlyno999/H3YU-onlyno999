@@ -6,21 +6,22 @@ description: 歌曲全自动生产 Agent（YU＝音乐）：用户只给故事/�
 # H3YU-onlyno999 · 歌曲生产 Agent
 
 ## Purpose
-一句话故事进，一首完整能听的歌出。用户只负责给故事和大白话定调（"暗黑一点""风趣调侃"），其余全部由 Agent 导演：风格转译 → Caption → 歌词 → 时长 → 派发 → 质检 → 交付。用户的大白话**不许**原样抄进提示词，必须转译成专业音乐语言。
+一句话故事进，一首完整能听的歌出。用户只负责给故事和大白话定调（"暗黑一点""风趣调侃"），其余全部由 Agent 导演：风格转译 → 写词（五分析＋副歌先行＋五维自审＋用户过目）→ Caption → 时长 → 派发 → 质检 → 交付。用户的大白话**不许**原样抄进提示词，必须转译成专业音乐语言。
 
 ## Tooling
 - 云端出口：RunningHub workflow `2108276969036148738`《Minimax Music 3 音乐生成工作流》（803 已激活，非 ai-app）。
 - 派发：`bin/dispatch_music.py --brief brief.json`（含轮询与下载，brief 字段：caption/lyrics/seconds/prefix/outdir）。
 - 质检：`bin/qc_asr.py <mp3>`（带时间戳分段转写，验收唯一依据）。
 - Caption 改写：先走官方技能 `music-caption-rewriter`（~/workspace/skills/music-caption-rewriter/，源 MiniMax-AI/MiniMax-Music3）全流程，再把产出的三段式 Caption 喂 42 号。
+- 写词/审词方法：走技能包 `chinese-songwriter-skill`（~/workspace/skills/chinese-songwriter-skill/，源 github.com/coinluu/chinese-songwriter-skill）——写词读其 `prompts/lyric_creator.md`，审词读 `prompts/lyric_reviewer.md`，对唱设计读 `prompts/duet_designer.md`，押韵/结构/风格判断查 `knowledge/` 下的韵脚库、结构库与风格库；与 music-caption-rewriter 并列为本 Agent 的两个方法依赖，其原文只按路径引用、不复制进本技能。
 - 鉴权：RunningHub 走 surrogate 凭据 `custom.runninghub`（/opt/hatch/skills/skill-creator/bin 的 dynamic_credentials helper），脚本内已封装。
 - 交付盘：Google Drive「MP3」文件夹 id `1-EXHjZyr8hVPFYLMn53MBoiAhdbCcbEi`（hatch_gws_cli drive +upload --parent）。
 
 ## Workflow
 1. **接故事**：听完用户给的故事/视频/主题；素材是视频时，先逐帧看完＋原声转写，歌词只许用真实发生的内容，不许编造情节。
 2. **定类型与风格——让用户选**：读完素材（视频必须先读完）后，先把故事梗概一句话交代给用户，再给出类型/风格选项让用户点选：类型如吐槽调侃、正经叙事、抒情走心、热血励志等，风格如说唱叙事＋摇滚副歌、民谣故事歌、方言说唱等；给 2–3 个组合方案（各附一句人话说明＋适合这个故事的理由，标注 Agent 推荐），用选项卡让用户点选，点完才往下写。用户明确说「你定/随便」时才由 Agent 拍板。类型与风格一经点选，本单内不再改口（改口按新单处理）。
-3. **写 Caption**：严格走 music-caption-rewriter 技能八步（Brief→约束→genre-router→家族索引→≤3 模板→时间线→三段式渲染→校验），产出 `### Global Metadata / ### Vocal Details / ### Arrangement` 约 250–450 英文词；编排时间线必须与歌词段落一一对应；歌词原文不许进 Caption。
-4. **写歌词**：按原案例格式（见 references/original_format.md）：小写标签、段间空行（[instrumental] 后不空行）、[pre-chorus]＝两行同句钩子、副歌整块原样重复连唱。**歌词必须写完整，靠整块重复撑时长，不靠堆新段**；故事的全部关键情节必须入词，结尾 [outro] 必须有收束句。
+3. **写歌词（方法走 chinese-songwriter-skill）**：按其资源路由读取 `prompts/lyric_creator.md`（写词）、`prompts/duet_designer.md`（涉对唱时）与 `knowledge/` 韵脚库/结构库，顺序是——①**写词前五分析**：先想清主题到底说什么、人物关系是谁对谁、场景落在哪、情绪从哪推到哪、这首歌唱给谁听，五项没定不许下笔；②**副歌核心句先行**：先钉死一句歌名级的核心句（自然、好记、能单独摘出来传唱），再往两边长主歌；③**按结构写全词**：段落各司其职——主歌管叙事与细节、副歌管核心情绪与记忆点、桥段管转折或新理解、尾声留白收束；对唱必须有视角差（双方身份、立场、要表达的内容各不相同，副歌可先分唱再合唱），不许两人轮流唱同一套话；④**五维自审打分**：按其审词法从文学性、情绪、演唱性、原创性、传播性五维各 20 分自评，指出具体弱句并当场改，**总分不到 80 不许往下走**；⑤**交用户过目**：定稿词先发用户，用户点头（或按意见改完）才进下一步。格式仍按原案例（见 references/original_format.md）：小写标签、段间空行（[instrumental] 后不空行）、副歌整块原样重复连唱。**歌词必须写完整，靠整块重复撑时长，不靠堆新段**；故事的全部关键情节必须入词，结尾 [outro] 必须有收束句。
+4. **写 Caption**：严格走 music-caption-rewriter 技能八步（Brief→约束→genre-router→家族索引→≤3 模板→时间线→三段式渲染→校验），产出 `### Global Metadata / ### Vocal Details / ### Arrangement` 约 250–450 英文词；编排时间线必须与**已定稿的歌词**段落一一对应；歌词原文不许进 Caption。
 5. **定时长**：时长由故事完整度决定（用户 2026-10-09 定版：用户只给故事，时长 Agent 定，硬要求＝完美结尾）。估算唱速：中文说唱/演唱混合约 4.2–5.0 字/秒；内容预计超时就**延长时长**（最长 300 秒），不许砍结尾。
 6. **派发**：Standard 实例（instanceType=default），只覆盖五处：42.caption／42.lyrics／**42.max_duration**／46.seconds／35.filename_prefix。见铁律 1。
 7. **质检**：`bin/qc_asr.py` 带时间戳逐段核对——每段按序唱到、outro 完整唱完、人声终点距文件尾 ≤约 10 秒、无单句卡循环、无大段无词空白。不达标按病因修（内容溢出→加时长或删中段重复；后段崩→先查 max_duration），不许带病交付。
@@ -44,3 +45,4 @@ description: 歌曲全自动生产 Agent（YU＝音乐）：用户只给故事/�
 5. 采样参数不乱动：42 cfg_scale=1.7／top_k=50、47 steps=30／cfg=1.7／euler／simple 为画布现值，默认沿用；要变只变 seed。
 6. 一次只派一版；回片验完才决定是否重派，重派只改病因变量（单变量原则）。
 7. 素材类歌词（真实事件/维权/人物）只写素材里证实的内容，调侃对象与尺度按用户定调，不替用户加戏。
+8. **写词纪律**：押韵以宽韵为先，副歌韵脚可以收紧图个好记，但绝不许为了凑韵把语序写拧巴、把意思写丢；意象必须具体、贴这个人这个故事，不许拿漂亮词堆装饰；远方、光芒、梦想、方向、翅膀这类空泛万能尾词，没有新角度一律禁用；情绪必须有递进——从克制到爆发、从怀念到释然都行，就是不许全篇一个强度喊到底。
